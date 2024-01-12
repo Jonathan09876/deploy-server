@@ -1,16 +1,12 @@
 {
   "name": "mern-project-locator",
   "version": "1.0.0",
-  "proxy": "http://localhost:6000",
   "description": "",
   "main": "index.js",
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "server": "nodemon server/server",
-    "client": "npm start --prefix client",
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false npm install --prefix client && npm run build --prefix client"
+    "dev": "npm run server"
   },
   "dependencies": {
     "@googlemaps/js-api-loader": "^1.16.2",
