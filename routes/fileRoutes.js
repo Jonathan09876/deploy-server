@@ -18,6 +18,7 @@ import multer from 'multer'
     },
     filename: function (req, file, cb) {
     let extArray = file.mimetype.split("/");
+       console.log("aaaaa")
     let extension = extArray[extArray.length - 1];
     cb(null, file.originalname)
     }
