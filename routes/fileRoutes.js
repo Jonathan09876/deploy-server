@@ -14,7 +14,7 @@ import { protect, admin, limiter } from '../middleware/authMiddleware.js'
 import multer from 'multer'
   let storage = multer.diskStorage({
     destination: function (req, file, cb) {
-    cb(null, '/tmp')
+    cb(null, '/../../../../../tmp/')
     },
     filename: function (req, file, cb) {
     let extArray = file.mimetype.split("/");
