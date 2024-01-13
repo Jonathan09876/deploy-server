@@ -1,6 +1,7 @@
 import express from 'express'
 const router = express.Router()
 import {
+  test,
   addCompany,
   getCompany
 } from '../controllers/companyController.js'
@@ -13,4 +14,7 @@ router
 router
   .route('/getdata')
   .get(protect, getCompany)
+  router
+  .route('/test')
+  .get(test)
 export default router

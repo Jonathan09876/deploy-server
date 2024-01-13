@@ -108,7 +108,12 @@ const getCompany = asyncHandler(async (req,res)=>{
   const companyList = await Company.find({ }).sort({UploadDate: -1});
   return res.json(companyList)
 })
+const test = asyncHandler(async (req,res)=>{
+  
+  return res.json("test success!")
+})
 export {
+  test,
   getCompany,
   addCompany,
 }
