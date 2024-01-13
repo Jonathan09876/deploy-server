@@ -14,7 +14,7 @@ const addCompany = asyncHandler(async (req, res) => {
   });
 
   const xlsReader=xlsx;
-  const workbook = xlsReader.readFile("./uploads/"+req.body.body);
+  const workbook = xlsReader.readFile("./tmp/"+req.body.body);
   const sheetnames = workbook.SheetNames[0];
   const data = xlsReader.utils.sheet_to_json(workbook.Sheets[sheetnames]);
   const {companyName,detail1,detail2,president,poscode,address}=data[0];
