@@ -1,6 +1,7 @@
 import asyncHandler from 'express-async-handler'
 import File from '../models/FileModel.js'
 const uploadFile = asyncHandler(async (req, res)=>{
+  console.log("here is uploadcontoller----")
   try{
       const  filename = req.file.originalname
       var UploadDate = new Date();
