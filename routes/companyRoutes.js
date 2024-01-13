@@ -13,7 +13,7 @@ router
   .post(protect, addCompany)
 router
   .route('/getdata')
-  .get(protect, getCompany)
+  .get(getCompany)
   router
   .route('/test')
   .get(test)
