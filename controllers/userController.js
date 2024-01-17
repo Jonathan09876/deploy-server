@@ -1,51 +1,133 @@
-import jwt from 'jsonwebtoken'
-import rateLimit from 'express-rate-limit'
 import asyncHandler from 'express-async-handler'
+import generateToken from '../utils/generateToken.js'
 import User from '../models/userModel.js'
 
-const protect = asyncHandler(async (req, res, next) => {
-  let token
-  if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith('Bearer')
-     ) {
-      
-      try {
-        token = req.headers.authorization.split(' ')[1]
-
-        const decoded = jwt.verify(token, process.env.JWT_KEY)
-
-        req.user = await User.findById(decoded.id).select('-password')
-        next()
-      } catch (error) {
-      console.error(error)
-      res.status(401)
-      throw new Error('Not authorized, token failed')
-    }
-  }
-
-  if (!token) {
+// @desc    Auth user & get token
+// @route   POST /api/users/login
+// @access  Public
+const authUser = asyncHandler(async (req, res) => {
+  console.log("----login-----");
+  const { email, password } = req.body;
+  const user = await User.findOne({ email });
+  if (user && (await user.matchPassword(password))) {
+    
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      isAdmin: user.isAdmin,
+      token: generateToken(user._id),
+    })
+    
+   
+  } else {
     
     res.status(401)
-    throw new Error('Not authorized, no token')
+    throw new Error('Invalid email or password')
   }
 })
 
-const admin = (req, res, next) => {
+// @desc    Register a new user
+// @route   POST /api/users
+// @access  Public
+const registerUser = asyncHandler(async (req, res) => {
+  const { name, email, password } = req.body
 
-  if ((req.user && req.user.isAdmin) || (req.body.user && req.body.user.isAdmin)) {
-    next()
-  } else {
-    res.status(401)
-    throw new Error('Not authorized as an admin')
+  const userExists = await User.findOne({ email })
+
+  if (userExists) {
+    res.status(400)
+    throw new Error('User already exists')
   }
+  const user = await User.create({
+    name,
+    email,
+    password,
+  })
+  
+  if (user) {
+    res.status(201).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      isAdmin: user.isAdmin,
+      token: generateToken(user._id),
+    })
+  } else {
+    res.status(400)
+    throw new Error('Invalid user data')
+  }
+})
+
+// @desc    Get user profile
+// @route   GET /api/users/profile
+// @access  Private
+const getUserProfile = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id)
+
+  if (user) {
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      addresses: user.userAddress,
+      isAdmin: user.isAdmin,
+      domain: user.domain
+    })
+  } else {
+    res.status(404)
+    throw new Error('User not found')
+  }
+})
+
+// @desc    Update user profile
+// @route   PUT /api/users/profile
+// @access  Private
+const updateUserProfile = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id)
+
+  if (user) {
+    user.name = req.body.name || user.name
+    user.email = req.body.email || user.email
+    if (req.body.password) {
+      user.password = req.body.password
+    }
+
+    const updatedUser = await user.save()
+
+    res.json({
+      _id: updatedUser._id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      isAdmin: updatedUser.isAdmin,
+      token: generateToken(updatedUser._id),
+    })
+  } else {
+    res.status(404)
+    throw new Error('User not found')
+  }
+})
+
+// @desc    Get all users
+// @route   GET /api/users
+// @access  Private/Admin
+const getUsers = asyncHandler(async (req, res) => {
+  const pageSize = 5
+  const page = Number(req.query.pageNumber) || 1
+
+  const users = await User.find({})
+    .limit(pageSize)
+    .skip(pageSize * (page - 1))
+
+  const count = await User.countDocuments({})    
+  res.json({ users, page, pages: Math.ceil(count / pageSize) })
+})
+
+
+export {
+  authUser,
+  registerUser,
+  getUserProfile,
+  updateUserProfile,
+  getUsers,
 }
-
-const limiter = rateLimit({
-  windowMs: 15 * 1000, // 15 seconds
-  max: 5, // limit each IP to 100 requests per windowMs
-  message:
-    "Too many accounts created from this IP, please try again after an hour"
-});
-
-export { protect, admin, limiter }
