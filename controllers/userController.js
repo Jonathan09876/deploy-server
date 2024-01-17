@@ -63,16 +63,13 @@ const registerUser = asyncHandler(async (req, res) => {
 // @route   GET /api/users/profile
 // @access  Private
 const getUserProfile = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id)
+  const user = await User.findById(req.body.id)
 
   if (user) {
     res.json({
       _id: user._id,
       name: user.name,
-      email: user.email,
-      addresses: user.userAddress,
-      isAdmin: user.isAdmin,
-      domain: user.domain
+      email: user.email
     })
   } else {
     res.status(404)
@@ -84,15 +81,12 @@ const getUserProfile = asyncHandler(async (req, res) => {
 // @route   PUT /api/users/profile
 // @access  Private
 const updateUserProfile = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id)
+  
+  const user = await User.findById(req.body.update.user._id)
 
   if (user) {
-    user.name = req.body.name || user.name
-    user.email = req.body.email || user.email
-    if (req.body.password) {
-      user.password = req.body.password
-    }
-
+    user.name = req.body.update.name || user.name
+    user.email = req.body.update.email || user.email
     const updatedUser = await user.save()
 
     res.json({
@@ -100,7 +94,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
       name: updatedUser.name,
       email: updatedUser.email,
       isAdmin: updatedUser.isAdmin,
-      token: generateToken(updatedUser._id),
+      // token: generateToken(updatedUser._id),
     })
   } else {
     res.status(404)
@@ -111,23 +105,30 @@ const updateUserProfile = asyncHandler(async (req, res) => {
 // @desc    Get all users
 // @route   GET /api/users
 // @access  Private/Admin
+
 const getUsers = asyncHandler(async (req, res) => {
-  const pageSize = 5
-  const page = Number(req.query.pageNumber) || 1
+  const pageSize = 10
+  const page=req.body.limit;
 
   const users = await User.find({})
     .limit(pageSize)
-    .skip(pageSize * (page - 1))
-
+    .skip(pageSize * (page))
+  console.log(page)
   const count = await User.countDocuments({})    
   res.json({ users, page, pages: Math.ceil(count / pageSize) })
 })
 
-
+const deleteUser=asyncHandler(async (req, res) => {
+  const id=req.body.id;
+  const result= await User.deleteOne({_id:id})
+ 
+  res.json({ result})
+})
 export {
   authUser,
   registerUser,
   getUserProfile,
   updateUserProfile,
   getUsers,
+  deleteUser
 }
