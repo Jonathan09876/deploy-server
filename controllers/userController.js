@@ -1,12 +1,11 @@
 import asyncHandler from 'express-async-handler'
 import generateToken from '../utils/generateToken.js'
 import User from '../models/userModel.js'
-
+import bcrypt from 'bcryptjs'
 // @desc    Auth user & get token
 // @route   POST /api/users/login
 // @access  Public
 const authUser = asyncHandler(async (req, res) => {
-  console.log("----login-----");
   const { email, password } = req.body;
   const user = await User.findOne({ email });
   if (user && (await user.matchPassword(password))) {
@@ -26,10 +25,26 @@ const authUser = asyncHandler(async (req, res) => {
     throw new Error('Invalid email or password')
   }
 })
+const updatePassword = asyncHandler(async (req, res) => {
+  const current = req.body.payload.current;
+  const newPassword = req.body.payload.new;
+  const _id=req.body.user._id
+  const user = await User.findOne({ _id:_id });
+  if (user && (await user.matchPassword(current))) {
+    
+    
+    const salt = await bcrypt.genSalt(10)
+    const hashPassword = await bcrypt.hash(newPassword, salt);
+    const updateReault=await User.updateOne({'_id':_id},{$set:{'password':hashPassword}});
+    res.json(updateReault);
+   
+  } else {
+    
+    res.status(401)
+    throw new Error('Invalid password')
+  }
+})
 
-// @desc    Register a new user
-// @route   POST /api/users
-// @access  Public
 const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body
 
@@ -82,8 +97,7 @@ const getUserProfile = asyncHandler(async (req, res) => {
 // @access  Private
 const updateUserProfile = asyncHandler(async (req, res) => {
   
-  const user = await User.findById(req.body.update.user._id)
-
+  const user = await User.findById(req.body.update._id)
   if (user) {
     user.name = req.body.update.name || user.name
     user.email = req.body.update.email || user.email
@@ -94,7 +108,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
       name: updatedUser.name,
       email: updatedUser.email,
       isAdmin: updatedUser.isAdmin,
-      // token: generateToken(updatedUser._id),
+      token: generateToken(updatedUser._id),
     })
   } else {
     res.status(404)
@@ -130,5 +144,6 @@ export {
   getUserProfile,
   updateUserProfile,
   getUsers,
-  deleteUser
+  deleteUser,
+  updatePassword
 }
